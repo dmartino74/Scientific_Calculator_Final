@@ -6,10 +6,12 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from typing import List
 
-from operations import get_operation
-from models.calculation import Base, Calculation
-from db import engine, get_db
-from schemas import CalculationRead  # ✅ Uses your existing schema
+# ✅ Use absolute imports for CI compatibility
+from app.operations import get_operation
+from app.operations.models.calculation import Base, Calculation
+from app.db import engine, get_db
+from app.schemas import CalculationRead
+
 import uvicorn
 import logging
 
@@ -17,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="app/templates")
 
 # ✅ Create tables at startup
 Base.metadata.create_all(bind=engine)
@@ -95,7 +97,6 @@ async def calculate(operation: CalculationRequest, db: Session = Depends(get_db)
         logger.error(f"Internal Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-# ✅ New route to list all records
 @app.get("/records", response_model=List[CalculationRead])
 async def get_all_records(db: Session = Depends(get_db)):
     return db.query(Calculation).all()
