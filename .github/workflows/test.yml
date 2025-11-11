@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   test:
@@ -33,35 +33,55 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Cache dependencies
-        uses: actions/cache@v3
+      - name: Install apt deps required by Playwright
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libxss1 \
+            libpangocairo-1.0-0 \
+            libasound2t64 || sudo apt-get install -y --no-install-recommends libasound2 || true
+
+      - name: Cache pip
+        uses: actions/cache@v4
         with:
-          path: |
-            venv
-            ~/.cache/pip
+          path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Prepare python venv and install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+          python -m pip install pytest-playwright
+          python -m playwright install --with-deps
+
       - name: Prepare test results folder
         run: mkdir -p test-results
 
-      - name: Install dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
-          playwright install
-
-      - name: Run tests
+      - name: Run unit and integration tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fastapi_db
+          PYTHONPATH: ${{ github.workspace }}
+          PORT: 8000
         run: |
-          source venv/bin/activate
-          export PYTHONPATH=$(pwd)
-          pytest tests/unit/ --cov=app --junitxml=test-results/unit.xml
-          pytest tests/integration/ --junitxml=test-results/integration.xml
-          pytest tests/e2e/ --junitxml=test-results/e2e.xml
+          source .venv/bin/activate
+          pytest tests/unit/ --cov=app --junitxml=test-results/unit.xml -q
+          pytest tests/integration/ --junitxml=test-results/integration.xml -q
+
+      - name: Run E2E tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fastapi_db
+          PYTHONPATH: ${{ github.workspace }}
+          PORT: 8000
+        run: |
+          source .venv/bin/activate
+          pytest tests/e2e/ --junitxml=test-results/e2e.xml -q
 
   security:
     needs: test
@@ -105,10 +125,8 @@ jobs:
         with:
           push: true
           tags: |
-            kaw393939/module11_is601:latest
-            kaw393939/module11_is601:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/module11_is601:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/module11_is601:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=kaw393939/module11_is601:cache
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/module11_is601:cache
           cache-to: type=inline,mode=max
-
-          
