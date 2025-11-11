@@ -36,7 +36,13 @@ jobs:
       - name: Install apt deps required by Playwright
         run: |
           sudo apt-get update
-          sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libxss1 libpangocairo-1.0-0 libasound2
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libxss1 \
+            libpangocairo-1.0-0 \
+            libasound2t64 || sudo apt-get install -y --no-install-recommends libasound2 || true
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -76,3 +82,4 @@ jobs:
         run: |
           source .venv/bin/activate
           pytest tests/e2e/ --junitxml=test-results/e2e.xml -q
+
