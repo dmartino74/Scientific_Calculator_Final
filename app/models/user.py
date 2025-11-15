@@ -14,8 +14,7 @@ def hash_password(password: str) -> str:
     # bcrypt only supports up to 72 bytes
     encoded = password.encode("utf-8")
     if len(encoded) > 72:
-        # truncate safely instead of raising
-        encoded = encoded[:72]
+        encoded = encoded[:72]  # truncate safely
     return pwd_context.hash(encoded.decode("utf-8", errors="ignore"))
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -44,4 +43,6 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     return {"message": "Login successful", "user_id": db_user.id}
+
+
 
