@@ -88,6 +88,9 @@ jobs:   # 👈 this was missing
           PORT: 8000
         run: |
           source .venv/bin/activate
+          # Start the app in background so Playwright can reach the static pages
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > uvicorn.log 2>&1 &
+          sleep 2
           pytest tests/e2e/ --junitxml=test-results/e2e.xml -q
 
   security:

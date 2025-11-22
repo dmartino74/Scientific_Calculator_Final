@@ -12,6 +12,7 @@ class CalculationCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_inputs(self):
+        # In Pydantic v2, this method receives the model instance
         if self.type == "Divide" and self.b == 0:
             raise ValueError("Cannot divide by zero")
         return self
@@ -25,3 +26,5 @@ class CalculationRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    class Config:
+        from_attributes = True  # allows ORM -> Pydantic conversion

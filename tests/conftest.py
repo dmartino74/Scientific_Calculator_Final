@@ -1,8 +1,13 @@
+import sys
+import os
 import pytest
 import asyncio
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+# Ensure project root is on sys.path so "app" package is found
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.models.base import Base
 from app.db import get_db
@@ -25,7 +30,7 @@ def setup_db():
     """Create all tables once for the entire test session."""
     Base.metadata.create_all(bind=engine)
     yield
-    # Leave tables in place; they exist only in memory during the session.
+    # Tables exist only in memory; no teardown needed.
 
 
 @pytest.fixture(scope="function")
@@ -37,21 +42,18 @@ def db_session():
         try:
             yield session
         finally:
-            # Closed after each test
-            session.close()
+            # session will be closed after the test, not during request
+            pass
 
-    # Override the app's DB dependency for the duration of the test
     app.dependency_overrides[get_db] = override_get_db
-
     yield session
-
-    # Cleanup
+    session.close()
     app.dependency_overrides.clear()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def event_loop():
-    """Create an event loop for the test session (needed for asyncio plugins)."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    """Create a new event loop per test function (needed for asyncio plugins)."""
+    loop = asyncio.new_event_loop()
     yield loop
     loop.close()

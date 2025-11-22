@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
 from app.db import engine
@@ -37,6 +38,9 @@ app.add_middleware(
 # Include routers
 app.include_router(users.router)  # This adds /users/register and /users/login
 app.include_router(calculations.router)  # This adds /calculations endpoints
+
+# Serve static frontend files (register.html, login.html, etc.)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/")
