@@ -86,7 +86,10 @@ def test_calculations_negative_divide_by_zero(page, server_url):
     page.fill('#reg_email', email)
     page.fill('#reg_password', password)
     page.click('#btn_register')
-    page.wait_for_timeout(200)
+    # wait until auth message shows success text and token is set in the page
+    page.wait_for_selector('#auth_msg')
+    auth_text = page.locator('#auth_msg').inner_text(timeout=5000)
+    assert 'registered' in auth_text.lower() or 'login' in auth_text.lower()
 
     page.fill('#a', '5')
     page.fill('#b', '0')
