@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
 
-jobs:   # 👈 this was missing
+jobs:
   test:
     runs-on: ubuntu-latest
     services:
@@ -64,7 +64,7 @@ jobs:   # 👈 this was missing
       - name: Prepare test results folder
         run: mkdir -p test-results
 
-      - name: Initialize database   # 👈 NEW STEP
+      - name: Initialize database
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fastapi_db
         run: |
@@ -103,10 +103,21 @@ jobs:   # 👈 this was missing
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Check Docker credentials
+        run: |
+          if [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
+            echo "SKIP_DOCKER=true" >> $GITHUB_ENV
+            echo "Docker credentials missing — docker steps will be skipped"
+          else
+            echo "SKIP_DOCKER=false" >> $GITHUB_ENV
+          fi
+
       - name: Build Docker image (pull latest base)
-          run: docker build --pull -t dmartino74/module14_is601:test .
+        if: env.SKIP_DOCKER != 'true'
+        run: docker build --pull -t dmartino74/module14_is601:test .
 
       - name: Install Trivy
+        if: env.SKIP_DOCKER != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y wget apt-transport-https gnupg lsb-release ca-certificates jq
@@ -116,13 +127,14 @@ jobs:   # 👈 this was missing
           sudo apt-get install -y trivy
 
       - name: Run Trivy scan (informational only)
+        if: env.SKIP_DOCKER != 'true'
         run: |
           trivy image --format table --exit-code 0 --ignore-unfixed dmartino74/module14_is601:test || true
           trivy image --format json --output trivy_full.json --ignore-unfixed dmartino74/module14_is601:test || true
           echo "Trivy scan completed (informational)."
 
       - name: Upload Trivy report artifact
-        if: always()
+        if: always() && env.SKIP_DOCKER != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: trivy-reports
@@ -140,21 +152,16 @@ jobs:   # 👈 this was missing
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to DockerHub
-          uses: docker/login-action@v3
-          with:
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to DockerHub (runtime)
+        if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build and push image
-        uses: docker/build-push-action@v5
-        with:
-          push: true
-          tags: |
-            dmartino74/module14_is601:latest
-            dmartino74/module14_is601:${{ github.sha }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=dmartino74/module12_is601:cache
-                    cache-from: type=registry,ref=dmartino74/module14_is601:cache
+        if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 --push \
+            -t dmartino74/module14_is601:latest \
+            -t dmartino74/module14_is601:${{ github.sha }} .
           cache-to: type=inline,mode=max
 
