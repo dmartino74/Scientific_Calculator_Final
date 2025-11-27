@@ -1,0 +1,151 @@
+FINAL PROJECT SUBMISSION - Advanced Calculator Application
+Student: David Martino
+
+═══════════════════════════════════════════════════════════════
+
+📌 GITHUB REPOSITORY
+https://github.com/dmartino74/Scientific_Calculator_Final
+
+🐳 DOCKER HUB IMAGE
+https://hub.docker.com/r/dmartino74/scientific-calculator
+
+═══════════════════════════════════════════════════════════════
+
+✨ FEATURES IMPLEMENTED (3 Advanced Features)
+
+1. USER PROFILE & PASSWORD MANAGEMENT
+   - View/Update profile (username, email)
+   - Secure password change with verification
+   - Frontend: static/profile.html
+   - Routes: GET/PUT /users/me, POST /users/me/change-password
+
+2. ADVANCED CALCULATION OPERATIONS
+   - Power/Exponentiation (a^b)
+   - Modulus (a%b)
+   - Square Root (√a)
+   - All with error handling and validation
+
+3. STATISTICS & ANALYTICS DASHBOARD
+   - Total calculations count
+   - Operation counts by type
+   - Average operand values
+   - Most used operation
+   - Route: GET /calculations/stats/summary
+
+═══════════════════════════════════════════════════════════════
+
+🧪 TESTING (ALL PASSING ✅)
+
+Unit Tests: 42 tests
+- Calculation logic (all 7 operations)
+- Password hashing/security
+- Profile validation
+- Statistics algorithms
+
+Integration Tests: 37 tests
+- Database CRUD operations
+- Authentication/Authorization
+- Profile management endpoints
+- Statistics accuracy
+
+E2E Playwright Tests: 15+ tests
+- Complete user workflows
+- Registration → Login → Calculations
+- Profile updates and password changes
+- Statistics viewing
+
+Total: 90+ comprehensive tests with 70%+ code coverage
+
+═══════════════════════════════════════════════════════════════
+
+🐳 DOCKER DEPLOYMENT
+
+Image: dmartino74/scientific-calculator:latest
+Status: ✅ Built and pushed successfully
+Services: FastAPI (8090), PostgreSQL (5432), PgAdmin (5050)
+
+Quick Start:
+  docker-compose up -d
+  Access: http://localhost:8090
+
+═══════════════════════════════════════════════════════════════
+
+🔄 CI/CD PIPELINE (GitHub Actions)
+
+Status: ✅ All workflows passing
+Pipeline includes:
+  ✅ Automated unit tests
+  ✅ Automated integration tests
+  ✅ Automated E2E tests with Playwright
+  ✅ Docker image build
+  ✅ Docker Hub deployment
+
+View Actions: https://github.com/dmartino74/Scientific_Calculator_Final/actions
+
+═══════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION
+
+README.md includes:
+  ✅ Complete feature descriptions
+  ✅ Installation instructions
+  ✅ Local testing guide
+  ✅ Docker deployment steps
+  ✅ API endpoint documentation
+  ✅ Docker Hub repository link
+
+Full submission details: FINAL_PROJECT_SUBMISSION.md
+
+═══════════════════════════════════════════════════════════════
+
+🎯 LEARNING OUTCOMES ACHIEVED
+
+✅ CLO3: Python applications with automated testing (90+ tests)
+✅ CLO4: GitHub Actions CI/CD (automated pipeline)
+✅ CLO9: Docker containerization (multi-service setup)
+✅ CLO10: REST API creation & testing (11 endpoints)
+✅ CLO11: SQL database integration (SQLAlchemy ORM)
+✅ CLO12: Pydantic JSON validation (8 schemas)
+✅ CLO13: Security best practices (JWT, bcrypt, auth)
+
+═══════════════════════════════════════════════════════════════
+
+🌐 LIVE APPLICATION URLS
+
+Main Application: http://localhost:8090/static/calculations.html
+Profile Page: http://localhost:8090/static/profile.html
+API Documentation: http://localhost:8090/docs
+Register: http://localhost:8090/static/register.html
+Login: http://localhost:8090/static/login.html
+
+═══════════════════════════════════════════════════════════════
+
+📊 PROJECT STATISTICS
+
+- Backend Routes: 11 RESTful endpoints
+- Database Models: 2 (User, Calculation with relationships)
+- Pydantic Schemas: 8 validation schemas
+- Frontend Pages: 4 interactive HTML pages
+- Calculation Operations: 7 types (add, subtract, multiply, divide, power, modulus, sqrt)
+- Docker Services: 3 containers (app, db, pgadmin)
+- Lines of Code: 2,500+
+- Test Coverage: 70%+
+
+═══════════════════════════════════════════════════════════════
+
+✅ SUBMISSION CHECKLIST
+
+✅ Three advanced features fully implemented
+✅ Backend with SQLAlchemy models and Pydantic schemas
+✅ Frontend with client-side validation
+✅ Comprehensive test suite (unit + integration + E2E)
+✅ Docker image built and deployed to Docker Hub
+✅ GitHub Actions CI/CD pipeline operational
+✅ All tests passing in CI
+✅ Complete documentation in README.md
+✅ Code committed and pushed to GitHub
+
+═══════════════════════════════════════════════════════════════
+
+REPOSITORY: https://github.com/dmartino74/Scientific_Calculator_Final
+DOCKER HUB: https://hub.docker.com/r/dmartino74/scientific-calculator
