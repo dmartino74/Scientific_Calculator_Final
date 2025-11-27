@@ -137,6 +137,6 @@ jobs:
             exit 0
           fi
           docker buildx build --platform linux/amd64 \
-            -t "${DOCKER_USERNAME}/module14_is601:latest" \
-            -t "${DOCKER_USERNAME}/module14_is601:${GITHUB_SHA}" \
+            -t "${DOCKER_USERNAME}/scientific_calculator_final:latest" \
+            -t "${DOCKER_USERNAME}/scientific_calculator_final:${GITHUB_SHA}" \
             --push .

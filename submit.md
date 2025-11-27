@@ -10,7 +10,7 @@ Files to include in your assignment upload or repository link:
 Required screenshots (save in `screenshots/` or attach separately):
 
 - `ci_success.png`: GitHub Actions workflow run page showing both `test` and `docker` jobs completed successfully. Capture the run summary and the expanded job list showing the test and docker stages.
-- `docker_push.png`: Docker Hub repository page showing the newly pushed image tag (e.g., `youruser/module14_is601:latest`). Include the repository name and timestamp visible.
+- `docker_push.png`: Docker Hub repository page showing the newly pushed image tag (e.g., `youruser/scientific_calculator_final:latest`). Include the repository name and timestamp visible.
 - `bread_frontend_create.png`: The `calculations.html` page after creating a calculation showing the created ID or result.
 - `bread_frontend_list.png`: The `calculations.html` page showing the browse/list view with multiple calculations.
 - `bread_frontend_edit_delete.png`: Evidence of editing and deleting a calculation (before/after or the UI message confirming deletion).
@@ -18,7 +18,7 @@ Required screenshots (save in `screenshots/` or attach separately):
 How to capture the screenshots
 
 1. GitHub Actions: After you push and the workflow completes, open the run on GitHub -> click the workflow run -> take a screenshot of the run page showing job success. Save as `ci_success.png`.
-2. Docker Hub: After CI pushes the image, go to `https://hub.docker.com/repository/docker/<youruser>/module14_is601/tags` and capture the tags list showing `latest` (or the commit SHA tag). Save as `docker_push.png`.
+2. Docker Hub: After CI pushes the image, go to `https://hub.docker.com/repository/docker/<youruser>/scientific_calculator_final/tags` and capture the tags list showing `latest` (or the commit SHA tag). Save as `docker_push.png`.
 3. Frontend interactions: Run the app locally (`uvicorn app.main:app --reload`), open `http://127.0.0.1:8000/static/calculations.html`, perform the Create/List/Edit/Delete flows and capture the browser window showing the result messages and list views. Save as the filenames above.
 
 Packaging for submission

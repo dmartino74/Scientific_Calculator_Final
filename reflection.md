@@ -31,7 +31,7 @@ Screenshots for submission
 I cannot create CI or Docker Hub screenshots until the workflow runs in your GitHub repo (it requires your Docker Hub secrets). After you push and the workflow completes, capture the following:
 
 - GitHub Actions run: screenshot of the workflow run page showing success for the `test` and `docker` jobs.
-- Docker Hub: screenshot showing the pushed image tag under your Docker Hub repository (e.g. `youruser/module14_is601:latest`).
+- Docker Hub: screenshot showing the pushed image tag under your Docker Hub repository (e.g. `youruser/scientific_calculator_final:latest`).
 - Application: screenshots of the `calculations.html` page performing Add/Edit/Delete operations.
 
 If you’d like, I can add a small `screenshots/` folder with placeholder images and a small `submit.md` describing which files to attach when you upload screenshots to the assignment portal.

@@ -114,7 +114,7 @@ jobs:
 
       - name: Build Docker image (pull latest base)
         if: env.SKIP_DOCKER != 'true'
-        run: docker build --pull -t dmartino74/module14_is601:test .
+        run: docker build --pull -t dmartino74/scientific_calculator_final:test .
 
       - name: Install Trivy
         if: env.SKIP_DOCKER != 'true'
@@ -129,8 +129,8 @@ jobs:
       - name: Run Trivy scan (informational only)
         if: env.SKIP_DOCKER != 'true'
         run: |
-          trivy image --format table --exit-code 0 --ignore-unfixed dmartino74/module14_is601:test || true
-          trivy image --format json --output trivy_full.json --ignore-unfixed dmartino74/module14_is601:test || true
+          trivy image --format table --exit-code 0 --ignore-unfixed dmartino74/scientific_calculator_final:test || true
+          trivy image --format json --output trivy_full.json --ignore-unfixed dmartino74/scientific_calculator_final:test || true
           echo "Trivy scan completed (informational)."
 
       - name: Upload Trivy report artifact
@@ -172,6 +172,6 @@ jobs:
           docker buildx build --platform linux/amd64,linux/arm64 \
             --push \
             --cache-to type=inline,mode=max \
-            -t dmartino74/module14_is601:latest \
-            -t dmartino74/module14_is601:${{ github.sha }} .
+            -t dmartino74/scientific_calculator_final:latest \
+            -t dmartino74/scientific_calculator_final:${{ github.sha }} .
 
