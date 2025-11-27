@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>User Profile</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            max-width: 800px;
+        }
+        input, button { 
+            margin: 5px; 
+            padding: 8px;
+        }
+        .section { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border-radius: 5px;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .info { 
+            background: #f0f0f0; 
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        h2 { color: #333; }
+        label { 
+            display: inline-block; 
+            width: 150px; 
+            font-weight: bold;
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover { background: #0056b3; }
+        .danger { background: #dc3545; }
+        .danger:hover { background: #c82333; }
+        nav {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #eee;
+            border-radius: 5px;
+        }
+        nav a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="login.html">Login</a>
+        <a href="register.html">Register</a>
+        <a href="calculations.html">Calculations</a>
+        <a href="profile.html">Profile</a>
+    </nav>
+
+    <h1>User Profile Management</h1>
+
+    <div class="section" id="auth">
+        <h2>Login First</h2>
+        <div>
+            <label>Username:</label>
+            <input id="login_username" placeholder="username">
+        </div>
+        <div>
+            <label>Password:</label>
+            <input id="login_password" placeholder="password" type="password">
+        </div>
+        <button id="btn_login">Login</button>
+        <div id="auth_msg"></div>
+    </div>
+
+    <div class="section" id="profile-section" style="display:none;">
+        <h2>Current Profile</h2>
+        <div class="info" id="current_profile">
+            <!-- Profile info will be loaded here -->
+        </div>
+    </div>
+
+    <div class="section" id="update-section" style="display:none;">
+        <h2>Update Profile</h2>
+        <div>
+            <label>New Username:</label>
+            <input id="new_username" placeholder="leave blank to keep current">
+        </div>
+        <div>
+            <label>New Email:</label>
+            <input id="new_email" placeholder="leave blank to keep current" type="email">
+        </div>
+        <button id="btn_update">Update Profile</button>
+        <div id="update_msg"></div>
+    </div>
+
+    <div class="section" id="password-section" style="display:none;">
+        <h2>Change Password</h2>
+        <div>
+            <label>Old Password:</label>
+            <input id="old_password" type="password" placeholder="current password">
+        </div>
+        <div>
+            <label>New Password:</label>
+            <input id="new_password" type="password" placeholder="min 8 characters">
+        </div>
+        <div>
+            <label>Confirm New:</label>
+            <input id="confirm_password" type="password" placeholder="confirm new password">
+        </div>
+        <button id="btn_change_password">Change Password</button>
+        <div id="password_msg"></div>
+    </div>
+
+    <script>
+        let token = null;
+        let currentUser = null;
+
+        function setMsg(id, msg, type='info') {
+            const el = document.getElementById(id);
+            el.innerText = msg;
+            el.className = type === 'error' ? 'error' : (type === 'success' ? 'success' : '');
+        }
+
+        function showProfileSections() {
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('profile-section').style.display = 'block';
+            document.getElementById('update-section').style.display = 'block';
+            document.getElementById('password-section').style.display = 'block';
+        }
+
+        async function loadProfile() {
+            if (!token) return;
+            const headers = {'Authorization': 'Bearer ' + token};
+            const resp = await fetch('/users/me', {headers});
+            if (resp.ok) {
+                currentUser = await resp.json();
+                const profileDiv = document.getElementById('current_profile');
+                profileDiv.innerHTML = `
+                    <p><strong>ID:</strong> ${currentUser.id}</p>
+                    <p><strong>Username:</strong> ${currentUser.username}</p>
+                    <p><strong>Email:</strong> ${currentUser.email}</p>
+                    <p><strong>Created:</strong> ${new Date(currentUser.created_at).toLocaleString()}</p>
+                `;
+                showProfileSections();
+            } else {
+                setMsg('auth_msg', 'Failed to load profile. Please login again.', 'error');
+            }
+        }
+
+        document.getElementById('btn_login').addEventListener('click', async ()=>{
+            const username = document.getElementById('login_username').value;
+            const password = document.getElementById('login_password').value;
+            
+            if (!username || !password) {
+                setMsg('auth_msg', 'Please enter username and password', 'error');
+                return;
+            }
+            
+            const resp = await fetch('/users/login',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({username, password})
+            });
+            const data = await resp.json();
+            
+            if (resp.ok) { 
+                token = data.access_token; 
+                setMsg('auth_msg', 'Login successful!', 'success');
+                await loadProfile();
+            } else {
+                setMsg('auth_msg', data.detail || 'Login failed', 'error');
+            }
+        });
+
+        document.getElementById('btn_update').addEventListener('click', async ()=>{
+            const newUsername = document.getElementById('new_username').value.trim();
+            const newEmail = document.getElementById('new_email').value.trim();
+            
+            if (!newUsername && !newEmail) {
+                setMsg('update_msg', 'Please enter at least one field to update', 'error');
+                return;
+            }
+            
+            const body = {};
+            if (newUsername) body.username = newUsername;
+            if (newEmail) body.email = newEmail;
+            
+            const headers = {
+                'Content-Type':'application/json',
+                'Authorization': 'Bearer ' + token
+            };
+            
+            const resp = await fetch('/users/me', {
+                method:'PUT',
+                headers,
+                body: JSON.stringify(body)
+            });
+            const data = await resp.json();
+            
+            if (resp.ok) {
+                setMsg('update_msg', 'Profile updated successfully!', 'success');
+                await loadProfile();
+                document.getElementById('new_username').value = '';
+                document.getElementById('new_email').value = '';
+            } else {
+                setMsg('update_msg', data.detail || 'Update failed', 'error');
+            }
+        });
+
+        document.getElementById('btn_change_password').addEventListener('click', async ()=>{
+            const oldPassword = document.getElementById('old_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                setMsg('password_msg', 'All password fields are required', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                setMsg('password_msg', 'New passwords do not match', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                setMsg('password_msg', 'New password must be at least 8 characters', 'error');
+                return;
+            }
+            
+            const headers = {
+                'Content-Type':'application/json',
+                'Authorization': 'Bearer ' + token
+            };
+            
+            const resp = await fetch('/users/me/change-password', {
+                method:'POST',
+                headers,
+                body: JSON.stringify({
+                    old_password: oldPassword,
+                    new_password: newPassword
+                })
+            });
+            const data = await resp.json();
+            
+            if (resp.ok) {
+                setMsg('password_msg', 'Password changed successfully! Please login again.', 'success');
+                document.getElementById('old_password').value = '';
+                document.getElementById('new_password').value = '';
+                document.getElementById('confirm_password').value = '';
+                // Clear token and show login again
+                setTimeout(() => {
+                    token = null;
+                    location.reload();
+                }, 2000);
+            } else {
+                setMsg('password_msg', data.detail || 'Password change failed', 'error');
+            }
+        });
+
+        // Check if token exists in localStorage (for persistent login)
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+            token = savedToken;
+            loadProfile();
+        }
+
+        // Save token to localStorage when logging in
+        const originalLoginHandler = document.getElementById('btn_login').onclick;
+        document.getElementById('btn_login').addEventListener('click', async function(e) {
+            // After successful login, save token
+            if (token) {
+                localStorage.setItem('token', token);
+            }
+        });
+    </script>
+</body>
+</html>

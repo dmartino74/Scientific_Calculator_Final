@@ -6,8 +6,8 @@ from typing import Optional
 class CalculationCreate(BaseModel):
     """Schema for creating a new calculation"""
     a: float = Field(..., description="First number")
-    b: float = Field(..., description="Second number")
-    type: str = Field(..., description="Operation type: add, subtract, multiply, divide")
+    b: float = Field(..., description="Second number (optional for unary operations)")
+    type: str = Field(..., description="Operation type: add, subtract, multiply, divide, power, modulus, sqrt")
     
     class Config:
         json_schema_extra = {
@@ -36,3 +36,23 @@ class CalculationRead(BaseModel):
 # Backwards compatibility aliases
 CalculationRequest = CalculationCreate
 CalculationResponse = CalculationRead
+
+
+class CalculationStatistics(BaseModel):
+    """Schema for calculation statistics"""
+    total_calculations: int
+    operation_counts: dict[str, int]
+    average_a: float
+    average_b: float
+    most_used_operation: str | None = None
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "total_calculations": 42,
+                "operation_counts": {"add": 15, "multiply": 10, "divide": 8, "subtract": 9},
+                "average_a": 25.5,
+                "average_b": 12.3,
+                "most_used_operation": "add"
+            }
+        }

@@ -1,13 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.user import User
 from app.operations.schemas.user_schemas import (
-    UserCreate, UserLogin, UserRead, LoginResponse
+    UserCreate, UserLogin, UserRead, LoginResponse, UserProfileUpdate, PasswordChange
 )
-from app.security import hash_password, verify_password, create_access_token
+from app.security import hash_password, verify_password, create_access_token, decode_access_token
 
 router = APIRouter(prefix="/users", tags=["users"])
+security = HTTPBearer()
+
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db)) -> User:
+    """Dependency to get the currently authenticated user from the Authorization header."""
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    user_id = payload.get("user_id") or payload.get("sub")
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+    # If user_id is username (string), try to find by username
+    if isinstance(user_id, str):
+        user = db.query(User).filter(User.username == user_id).first()
+    else:
+        user = db.query(User).filter(User.id == int(user_id)).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
 
 @router.post("/register", response_model=LoginResponse, status_code=200)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -59,6 +78,43 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
     }
 
 @router.get("/me", response_model=UserRead)
-def get_current_user(db: Session = Depends(get_db)):
-    # placeholder until authentication is wired in
-    raise HTTPException(status_code=501, detail="Not implemented - requires authentication")
+def get_current_user_profile(current_user: User = Depends(get_current_user)):
+    """Get current authenticated user's profile"""
+    return current_user
+
+
+@router.put("/me", response_model=UserRead)
+def update_user_profile(profile: UserProfileUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Update current user's profile (username and/or email)"""
+    # Check if username is being changed and if it already exists
+    if profile.username and profile.username != current_user.username:
+        existing_user = db.query(User).filter(User.username == profile.username).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username already exists")
+        current_user.username = profile.username
+    
+    # Check if email is being changed and if it already exists
+    if profile.email and profile.email != current_user.email:
+        existing_email = db.query(User).filter(User.email == profile.email).first()
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        current_user.email = profile.email
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user
+
+
+@router.post("/me/change-password")
+def change_password(password_data: PasswordChange, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Change current user's password"""
+    # Verify old password
+    if not verify_password(password_data.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
+    
+    # Hash and save new password
+    current_user.hashed_password = hash_password(password_data.new_password)
+    db.commit()
+    
+    return {"message": "Password changed successfully"}

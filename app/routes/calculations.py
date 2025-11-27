@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
+import math
 
 from app.db import get_db
 from app.models.calculation import Calculation
 from app.models.user import User
-from app.operations.schemas.calculation_schemas import CalculationCreate, CalculationRead
+from app.operations.schemas.calculation_schemas import CalculationCreate, CalculationRead, CalculationStatistics
 from app.security import decode_access_token
 
 # HTTP bearer security for extracting JWT
@@ -58,9 +60,10 @@ def read_calculation(calculation_id: int, db: Session = Depends(get_db), current
 def add_calculation(calc: CalculationCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     ADD: Create a new calculation (POST /calculations)
+    Supports: add, subtract, multiply, divide, power, modulus, sqrt
     """
     # Validate operation type
-    valid_types = ["add", "subtract", "multiply", "divide"]
+    valid_types = ["add", "subtract", "multiply", "divide", "power", "modulus", "sqrt"]
     if calc.type.lower() not in valid_types:
         raise HTTPException(
             status_code=422, 
@@ -81,10 +84,23 @@ def add_calculation(calc: CalculationCreate, db: Session = Depends(get_db), curr
             if calc.b == 0:
                 raise HTTPException(status_code=400, detail="Cannot divide by zero")
             result = calc.a / calc.b
+        elif op_type == "power":
+            result = calc.a ** calc.b
+        elif op_type == "modulus":
+            if calc.b == 0:
+                raise HTTPException(status_code=400, detail="Cannot perform modulus with zero")
+            result = calc.a % calc.b
+        elif op_type == "sqrt":
+            if calc.a < 0:
+                raise HTTPException(status_code=400, detail="Cannot calculate square root of negative number")
+            result = math.sqrt(calc.a)
+            # For sqrt, we store 'b' as 0 or as provided
         else:
             raise HTTPException(status_code=422, detail="Invalid operation type")
     except ZeroDivisionError:
         raise HTTPException(status_code=400, detail="Cannot divide by zero")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
     # Save to database
     new_calc = Calculation(
@@ -112,7 +128,7 @@ def edit_calculation(calculation_id: int, calc: CalculationCreate, db: Session =
         raise HTTPException(status_code=404, detail="Calculation not found")
     
     # Validate operation type
-    valid_types = ["add", "subtract", "multiply", "divide"]
+    valid_types = ["add", "subtract", "multiply", "divide", "power", "modulus", "sqrt"]
     op_type = calc.type.lower()
     
     if op_type not in valid_types:
@@ -133,8 +149,20 @@ def edit_calculation(calculation_id: int, calc: CalculationCreate, db: Session =
             if calc.b == 0:
                 raise HTTPException(status_code=400, detail="Cannot divide by zero")
             result = calc.a / calc.b
+        elif op_type == "power":
+            result = calc.a ** calc.b
+        elif op_type == "modulus":
+            if calc.b == 0:
+                raise HTTPException(status_code=400, detail="Cannot perform modulus with zero")
+            result = calc.a % calc.b
+        elif op_type == "sqrt":
+            if calc.a < 0:
+                raise HTTPException(status_code=400, detail="Cannot calculate square root of negative number")
+            result = math.sqrt(calc.a)
     except ZeroDivisionError:
         raise HTTPException(status_code=400, detail="Cannot divide by zero")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
     # Update fields
     db_calc.a = calc.a
@@ -161,3 +189,45 @@ def delete_calculation(calculation_id: int, db: Session = Depends(get_db), curre
     db.commit()
     
     return {"message": "Calculation deleted successfully", "id": calculation_id}
+
+
+@router.get("/stats/summary", response_model=CalculationStatistics)
+def get_calculation_statistics(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """
+    Get statistics about user's calculations including totals, operation counts, and averages
+    """
+    # Get all calculations for the user
+    calculations = db.query(Calculation).filter(Calculation.user_id == current_user.id).all()
+    
+    if not calculations:
+        return CalculationStatistics(
+            total_calculations=0,
+            operation_counts={},
+            average_a=0.0,
+            average_b=0.0,
+            most_used_operation=None
+        )
+    
+    # Calculate statistics
+    total = len(calculations)
+    operation_counts = {}
+    sum_a = 0.0
+    sum_b = 0.0
+    
+    for calc in calculations:
+        # Count operations
+        op = calc.type
+        operation_counts[op] = operation_counts.get(op, 0) + 1
+        sum_a += calc.a
+        sum_b += calc.b
+    
+    # Find most used operation
+    most_used = max(operation_counts.items(), key=lambda x: x[1])[0] if operation_counts else None
+    
+    return CalculationStatistics(
+        total_calculations=total,
+        operation_counts=operation_counts,
+        average_a=sum_a / total,
+        average_b=sum_b / total,
+        most_used_operation=most_used
+    )
