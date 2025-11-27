@@ -29,21 +29,26 @@ def override_get_db():
 app.dependency_overrides[get_db] = override_get_db
 
 
-@pytest.fixture(scope="module")
-def test_db():
-    """Create test database tables before tests"""
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_db():
+    """Create test database tables once for all tests"""
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(scope="function")
-def client(test_db):
+def client():
     """Create test client and clean database for each test"""
     # Clean tables before each test
-    with engine.begin() as conn:
-        for table in reversed(Base.metadata.sorted_tables):
-            conn.execute(table.delete())
+    try:
+        with engine.begin() as conn:
+            # Delete in correct order (calculations before users due to foreign key)
+            conn.execute(Calculation.__table__.delete())
+            conn.execute(User.__table__.delete())
+    except Exception:
+        # If tables don't exist, create them
+        Base.metadata.create_all(bind=engine)
     return TestClient(app)
 
 
