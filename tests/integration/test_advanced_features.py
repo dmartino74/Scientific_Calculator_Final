@@ -2,6 +2,7 @@
 Integration tests for user profile management, advanced calculations, and statistics
 """
 import pytest
+import uuid
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -12,10 +13,11 @@ client = TestClient(app)
 @pytest.fixture
 def auth_headers(db_session):
     """Register a user and return authentication headers"""
-    # Register a test user
+    # Generate unique username to avoid conflicts between tests
+    unique_id = str(uuid.uuid4())[:8]
     response = client.post("/users/register", json={
-        "username": "testuser",
-        "email": "test@example.com",
+        "username": f"testuser_{unique_id}",
+        "email": f"test_{unique_id}@example.com",
         "password": "testpass123"
     })
     assert response.status_code == 200
@@ -199,24 +201,28 @@ class TestPasswordChange:
     
     def test_login_after_password_change(self, db_session):
         """Test logging in with new password after change"""
-        # Register user
+        # Register user with unique username
+        unique_id = str(uuid.uuid4())[:8]
+        username = f"passtest_{unique_id}"
         register_response = client.post("/users/register", json={
-            "username": "passtest",
-            "email": "passtest@example.com",
+            "username": username,
+            "email": f"passtest_{unique_id}@example.com",
             "password": "oldpass123"
         })
+        assert register_response.status_code == 200
         token = register_response.json()["access_token"]
         auth_headers = {"Authorization": f"Bearer {token}"}
         
         # Change password
-        client.post("/users/me/change-password", json={
+        change_response = client.post("/users/me/change-password", json={
             "old_password": "oldpass123",
             "new_password": "newpass456"
         }, headers=auth_headers)
+        assert change_response.status_code == 200
         
         # Try to login with new password
         login_response = client.post("/users/login", json={
-            "username": "passtest",
+            "username": username,
             "password": "newpass456"
         })
         
