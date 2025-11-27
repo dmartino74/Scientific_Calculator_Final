@@ -32,3 +32,4 @@ playwright/.cache/
 # IDE/editor settings
 .vscode/
 .idea/
+test.db
