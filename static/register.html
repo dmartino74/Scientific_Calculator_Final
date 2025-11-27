@@ -21,6 +21,7 @@
 
     <button type="submit">Register</button>
   </form>
+  <p>Already have an account? <a href="/static/login.html">Login here</a></p>
 
   <script>
     document.getElementById("register-form").addEventListener("submit", async function(event) {
@@ -61,6 +62,7 @@
         if (response.ok) {
           localStorage.setItem("token", data.access_token);
           alert(`${data.message}\nUsername: ${data.username}\nUser ID: ${data.user_id}`);
+          window.location.href = "/static/calculations.html";
         } else {
           alert("Error: " + (data.detail || "Registration failed"));
         }
