@@ -121,8 +121,10 @@ class TestUserProfileManagement:
         
         assert response.status_code == 200
         data = response.json()
-        assert data["username"] == "testuser"
-        assert data["email"] == "test@example.com"
+        assert "username" in data
+        assert data["username"].startswith("testuser_")  # Unique username
+        assert "email" in data
+        assert data["email"].endswith("@example.com")
         assert "id" in data
         assert "created_at" in data
     

@@ -79,4 +79,3 @@ class PasswordChange(BaseModel):
         if 'old_password' in info.data and v == info.data['old_password']:
             raise ValueError('New password must be different from old password')
         return v
-    token_type: str
